@@ -1,174 +1,103 @@
-# Case Study: The Laggy To‑Do App (TaskEase)
+# Case Study: The Laggy To-Do App (TaskEase)
 
 ## Overview
 
-TaskEase is a cross‑platform productivity app built using **Flutter**. While the app performs smoothly on Android, users experience noticeable UI lag on **iOS** when adding or removing tasks.
+TaskEase is a Flutter-based cross-platform productivity app. While performance is smooth on Android, users noticed UI lag on iOS when adding or removing tasks.
 
-This case study analyzes the root cause of the performance issue and explains how Flutter’s **state management**, **reactive rendering**, and **Dart async model** can be used correctly to ensure smooth, consistent performance across platforms.
+This case study explains the cause of the issue and how proper **state management**, **reactive rendering**, and **Dart’s async model** help achieve smooth performance across platforms.
 
 ---
 
-## 🐢 Problem Analysis: Why the App Feels Laggy
+## 🐢 Why the App Felt Laggy
 
 ### 1. Improper State Management
 
-The app relies heavily on `setState()` at high levels of the widget tree.
+The app used `setState()` high in the widget tree.
 
-**What’s happening:**
+**Result:**
 
-* A single task addition/removal triggers `setState()` on the parent widget.
-* This forces **the entire widget tree to rebuild**, including widgets that did not change.
-
-**Impact:**
-
-* Unnecessary widget rebuilds
-* Increased CPU usage
-* Dropped frames, especially noticeable on iOS
+* Entire screen rebuilt for small task updates
+* Higher CPU usage and dropped frames on iOS
 
 ---
 
-### 2. Deeply Nested Widgets
+### 2. Deep Widget Nesting
 
-The UI is composed of multiple nested layout widgets (`Column → ListView → Row → Container → Text`).
+Multiple nested layout widgets caused expensive rebuilds.
 
-**What’s happening:**
+**Result:**
 
-* Every rebuild walks through the entire nested tree.
-* Flutter has to re‑evaluate layout and paint phases repeatedly.
-
-**Impact:**
-
-* Slower frame rendering
-* Layout recalculations become expensive
+* Slower layout and paint phases
+* Reduced frame rate
 
 ---
 
 ### 3. Rebuilding Static Widgets
 
-Widgets that never change (AppBar, headers, icons) are rebuilt repeatedly.
+Static widgets (AppBar, headers) were rebuilt repeatedly instead of using `const`.
 
-**What’s happening:**
+**Result:**
 
-* Widgets that could be `const` are recreated every frame.
-
-**Impact:**
-
-* Missed optimizations in Flutter’s widget comparison
-* Extra object allocations
+* Missed Flutter optimizations
+* Extra object creation
 
 ---
 
-## ⚙️ How Flutter’s Reactive Rendering Helps
+## ⚙️ Flutter’s Reactive Rendering
 
-Flutter uses a **reactive UI model**:
+Flutter follows a reactive model:
 
 * UI = function(state)
-* When state changes → framework rebuilds widgets
+* State change → widget rebuild
 
-### Efficient Rebuilds (When Done Right)
-
-Flutter does **not** redraw the entire screen automatically.
-
-Instead:
-
-1. Widgets are rebuilt (cheap)
-2. Elements are compared
-3. Only **dirty render objects** are repainted
-
-✅ When state is localized, Flutter updates **only the affected subtree**, keeping frame rendering close to **60 FPS**.
+Flutter efficiently updates only **changed subtrees**, not the whole screen. When state is localized, only affected widgets repaint, maintaining ~**60 FPS**.
 
 ---
 
-## ⚡ Dart’s Async Model & Smooth Performance
+## ⚡ Dart Async Model
 
-Dart uses a **single‑threaded event loop** with:
+Dart uses a single-threaded event loop with non-blocking `async/await`.
 
-* Event queue
-* Microtask queue
-* Non‑blocking `async/await`
+**Benefits:**
 
-### Why This Matters
-
-* UI rendering runs on the **main isolate**
-* Heavy operations (DB, network, file IO) run asynchronously
-
-**Best Practices Used:**
-
-* `Future`‑based task operations
-* No blocking code inside `build()`
-* Smooth UI even during task updates
+* UI runs on the main isolate
+* Heavy work runs asynchronously
+* No UI freezing during task updates
 
 ---
 
-## ✅ Optimized Solution Used in TaskEase
+## ✅ Optimized Solution
 
-### 1. Localized State Updates
-
-Instead of calling `setState()` at the screen level:
-
-* Task list state is managed inside a dedicated widget
+* Localized state inside task list widgets
 * Each task item rebuilds independently
+* Used `ValueNotifier` / `ChangeNotifier`
+* Reduced widget nesting
+* Applied `const` constructors
 
-Examples:
-
-* `ValueNotifier + ValueListenableBuilder`
-* `ChangeNotifier + Consumer`
-
----
-
-### 2. Efficient Widget Tree Design
-
-* Split large widgets into **small reusable widgets**
-* Used `const` constructors wherever possible
-* Avoided deep nesting
+Only the task list updates when tasks change; the rest of the UI remains untouched.
 
 ---
 
-### 3. Targeted Rebuilds
+## 🎥 Video Demo Highlights
 
-Only the task list updates when:
-
-* A task is added
-* A task is removed
-
-Other UI elements (AppBar, filters, footer) remain untouched.
-
----
-
-## 🎥 Video Demonstration (What We Show)
-
-In the demo video, we demonstrate:
-
-* Adding/removing tasks with **no visible lag**
-* Flutter DevTools rebuild counter
-* Only task items rebuilding, not the full screen
-* Stable frame rendering on iOS
+* Lag-free task add/remove
+* DevTools rebuild counter
+* Only task widgets rebuild
+* Smooth iOS performance
 
 ---
 
 ## 📈 Result
 
-After optimization:
-
-* ✅ Smooth scrolling
-* ✅ Instant task updates
-* ✅ No dropped frames on iOS
-* ✅ Consistent performance across Android & iOS
+* Smooth scrolling
+* Instant task updates
+* No dropped frames on iOS
+* Consistent Android & iOS performance
 
 ---
 
 ## 🏁 Conclusion
 
-UI lag in Flutter apps is rarely due to the framework itself. In TaskEase, the root cause was **poor state management and unnecessary widget rebuilds**.
-
-By:
-
-* Localizing state
-* Leveraging Flutter’s reactive rendering correctly
-* Using Dart’s async model responsibly
-
-We achieved a responsive, high‑performance to‑do app across platforms.
-
----
+The lag was caused by **unnecessary rebuilds**, not Flutter itself. By managing state correctly, optimizing the widget tree, and using Dart’s async model properly, TaskEase delivers a fast and responsive UI across platforms.
 
 **Author:** TaskEase Mobile Engineering Team
